@@ -1,0 +1,2117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Line-Based Anamorphic Portrait Generator (mm)</title>
+  
+  <!-- CDN resources -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.150.1/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.150.1/examples/jsm/"
+      }
+    }
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f5f5f5;
+      color: #333;
+      line-height: 1.6;
+    }
+    
+    .app-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+    
+    header {
+      background-color: #2563eb;
+      color: white;
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    
+    header h1 {
+      font-size: 1.25rem;
+      font-weight: bold;
+    }
+    
+    .header-subtitle {
+      font-size: 0.875rem;
+      opacity: 0.9;
+    }
+    
+    main {
+      display: flex;
+      flex-direction: row;
+      flex-grow: 1;
+      padding: 1rem;
+      gap: 1rem;
+      overflow: hidden;
+    }
+    
+    .sidebar {
+      background-color: white;
+      border-radius: 0.5rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+      padding: 1rem;
+      width: 280px;
+      max-width: 280px;
+      overflow-y: auto;
+      max-height: 100%;
+      flex-shrink: 0;
+    }
+    
+    @media (max-width: 767px) {
+      main {
+        flex-direction: column;
+      }
+      
+      .sidebar {
+        width: 100%;
+        max-width: 100%;
+        max-height: 50vh;
+      }
+    }
+    
+    .content {
+      flex-grow: 1;
+      background-color: white;
+      border-radius: 0.5rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    
+    .welcome-msg {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex-grow: 1;
+      color: #9ca3af;
+      text-align: center;
+      padding: 2rem;
+    }
+    
+    .welcome-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+    
+    .button {
+      display: inline-block;
+      background-color: #2563eb;
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 0.25rem;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      font-size: 0.875rem;
+      font-weight: 500;
+      text-align: center;
+    }
+    
+    .button:hover {
+      background-color: #1d4ed8;
+    }
+    
+    .button-row {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    
+    .button-secondary {
+      background-color: #4b5563;
+    }
+    
+    .button-secondary:hover {
+      background-color: #374151;
+    }
+    
+    .button-success {
+      background-color: #10b981;
+    }
+    
+    .button-success:hover {
+      background-color: #059669;
+    }
+    
+    .button-danger {
+      background-color: #ef4444;
+    }
+    
+    .button-danger:hover {
+      background-color: #dc2626;
+    }
+    
+    .button-outline {
+      background-color: transparent;
+      color: #2563eb;
+      border: 1px solid #2563eb;
+    }
+    
+    .button-outline:hover {
+      background-color: rgba(37, 99, 235, 0.1);
+    }
+    
+    .button-sm {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+    }
+    
+    .settings-section {
+      margin-bottom: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .settings-section:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+    
+    .settings-section-title {
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+      font-size: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .settings-row {
+      margin-bottom: 0.75rem;
+    }
+    
+    .settings-row:last-child {
+      margin-bottom: 0;
+    }
+    
+    .settings-label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-bottom: 0.25rem;
+    }
+    
+    .slider-container {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .slider {
+      flex-grow: 1;
+      width: 100%;
+    }
+    
+    .slider-value {
+      font-size: 0.75rem;
+      color: #6b7280;
+      min-width: 2.5rem;
+      text-align: right;
+    }
+    
+    footer {
+      background-color: #f3f4f6;
+      text-align: center;
+      padding: 0.5rem;
+      font-size: 0.75rem;
+      color: #6b7280;
+      flex-shrink: 0;
+    }
+    
+    .preview-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    
+    .preview-title {
+      font-weight: bold;
+      font-size: 1.125rem;
+    }
+    
+    .preview-subtitle {
+      font-size: 0.875rem;
+      color: #6b7280;
+    }
+    
+    .preview-container {
+      flex-grow: 1;
+      position: relative;
+      border: 1px solid #e5e7eb;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    canvas {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      cursor: grab;
+    }
+    
+    #container3D {
+      width: 100% !important;
+      height: 100% !important;
+    }
+    
+    /* View Controls */
+    .view-controls {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      display: flex;
+      gap: 0.5rem;
+      background-color: rgba(255, 255, 255, 0.7);
+      padding: 0.25rem;
+      border-radius: 0.25rem;
+      z-index: 10;
+    }
+    
+    .view-toggle {
+      display: flex;
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background-color: rgba(255, 255, 255, 0.8);
+      border-radius: 0.25rem;
+      z-index: 10;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    }
+    
+    .style-toggle {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background-color: rgba(255, 255, 255, 0.8);
+      border-radius: 0.25rem;
+      z-index: 10;
+      padding: 0.5rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    
+    .zoom-button {
+      background-color: #fff;
+      border: 1px solid #d1d5db;
+      color: #4b5563;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 0.25rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: all 0.2s;
+    }
+    
+    .zoom-button:hover {
+      background-color: #f3f4f6;
+    }
+    
+    .zoom-value {
+      display: flex;
+      align-items: center;
+      font-size: 0.875rem;
+      color: #4b5563;
+      min-width: 2.5rem;
+      justify-content: center;
+    }
+    
+    /* Menu styles */
+    .menu-button {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 50%;
+      transition: background-color 0.2s;
+    }
+    
+    .menu-button:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .menu {
+      position: fixed;
+      top: 0;
+      right: -300px;
+      width: 300px;
+      height: 100vh;
+      background-color: white;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      transition: right 0.3s ease;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .menu.open {
+      right: 0;
+    }
+    
+    .menu-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      background-color: #2563eb;
+      color: white;
+    }
+    
+    .menu-close {
+      background: none;
+      border: none;
+      font-size: 1.25rem;
+      cursor: pointer;
+      color: white;
+    }
+    
+    .menu-content {
+      padding: 1rem;
+      overflow-y: auto;
+      flex-grow: 1;
+    }
+    
+    .menu-section {
+      margin-bottom: 1.5rem;
+    }
+    
+    .menu-section:last-child {
+      margin-bottom: 0;
+    }
+    
+    .menu-section-title {
+      font-weight: bold;
+      margin-bottom: 0.75rem;
+      font-size: 1rem;
+      color: #4b5563;
+    }
+    
+    .menu-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s;
+      z-index: 999;
+    }
+    
+    .menu-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    /* Toggle switch */
+    .toggle-container {
+      display: flex;
+      gap: 0.5rem;
+    }
+    
+    .toggle-button {
+      flex: 1;
+      padding: 0.5rem;
+      border: 1px solid #d1d5db;
+      background-color: #f9fafb;
+      cursor: pointer;
+      text-align: center;
+      border-radius: 0.25rem;
+      font-size: 0.875rem;
+      transition: all 0.2s;
+    }
+    
+    .toggle-button.active {
+      background-color: #2563eb;
+      color: white;
+      border-color: #2563eb;
+    }
+    
+    .view-toggle-button {
+      padding: 0.5rem 0.75rem;
+      border: none;
+      background-color: rgba(255, 255, 255, 0.7);
+      cursor: pointer;
+      text-align: center;
+      font-size: 0.875rem;
+      transition: all 0.2s;
+      color: #4b5563;
+    }
+    
+    .view-toggle-button.active {
+      background-color: #2563eb;
+      color: white;
+    }
+    
+    /* Cropper styles */
+    .cropper-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      z-index: 1100;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .cropper-wrapper {
+      width: 90%;
+      max-width: 800px;
+      max-height: 80vh;
+      background-color: white;
+      border-radius: 0.5rem;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    
+    .cropper-header {
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .cropper-title {
+      font-weight: bold;
+      font-size: 1.125rem;
+    }
+    
+    .cropper-close {
+      background: none;
+      border: none;
+      font-size: 1.25rem;
+      cursor: pointer;
+      color: #4b5563;
+    }
+    
+    .cropper-content {
+      padding: 1rem;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    
+    .cropper-img-container {
+      flex-grow: 1;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+    
+    .cropper-controls {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      padding: 1rem;
+      border-top: 1px solid #e5e7eb;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <header>
+      <div>
+        <h1>Anamorphic Portrait Generator</h1>
+        <div class="header-subtitle">Create line-based anamorphic portraits for laser cutting (all dimensions in mm)</div>
+      </div>
+      <button id="menuButton" class="menu-button">
+        <i class="fas fa-bars"></i>
+      </button>
+    </header>
+    
+    <main>
+      <div class="sidebar">
+        <div id="initialControls">
+          <div class="settings-section">
+            <div class="settings-section-title">Image Input</div>
+            <div class="button-row">
+              <button id="uploadButton" class="button">
+                <i class="fas fa-upload"></i> Upload Image
+              </button>
+              <button id="pasteButton" class="button button-secondary">
+                <i class="fas fa-paste"></i> Paste
+              </button>
+            </div>
+            <input type="file" id="fileInput" accept="image/*" style="display: none;">
+            <div style="margin-top: 0.5rem; font-size: 0.75rem; color: #6b7280;">
+              or paste from clipboard (Ctrl+V)
+            </div>
+          </div>
+        </div>
+        
+        <div id="settingsControls" style="display: none;">
+          <div class="settings-section">
+            <div class="settings-section-title">Line Settings</div>
+            
+            <div class="settings-row">
+              <label class="settings-label">Line Count</label>
+              <div class="slider-container">
+                <input type="range" id="lineCount" class="slider" min="10" max="60" value="60">
+                <span id="lineCountValue" class="slider-value">60</span>
+              </div>
+              <div style="font-size: 0.75rem; color: #6b7280; margin-top: 4px;">
+                Higher values may impact performance
+              </div>
+            </div>
+            
+            <div class="settings-row">
+              <label class="settings-label">Oval Width (mm)</label>
+              <div class="slider-container">
+                <input type="range" id="ovalWidth" class="slider" min="100" max="800" value="300">
+                <span id="ovalWidthValue" class="slider-value">300</span>
+              </div>
+            </div>
+            
+            <div class="settings-row">
+              <label class="settings-label">Oval Height (mm)</label>
+              <div class="slider-container">
+                <input type="range" id="ovalHeight" class="slider" min="100" max="500" value="200">
+                <span id="ovalHeightValue" class="slider-value">200</span>
+              </div>
+            </div>
+            
+            <div class="settings-row">
+              <label class="settings-label">Structure Height (mm)</label>
+              <div class="slider-container">
+                <input type="range" id="height" class="slider" min="50" max="500" value="200">
+                <span id="heightValue" class="slider-value">200</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="settings-section">
+            <div class="settings-section-title">Thickness Settings</div>
+            
+            <div class="settings-row">
+              <label class="settings-label">Min Thickness (mm)</label>
+              <div class="slider-container">
+                <input type="range" id="minThickness" class="slider" min="0.5" max="5" step="0.5" value="1">
+                <span id="minThicknessValue" class="slider-value">1</span>
+              </div>
+            </div>
+            
+            <div class="settings-row">
+              <label class="settings-label">Max Thickness (mm)</label>
+              <div class="slider-container">
+                <input type="range" id="maxThickness" class="slider" min="1" max="20" value="10">
+                <span id="maxThicknessValue" class="slider-value">10</span>
+              </div>
+            </div>
+            
+            <div class="settings-row">
+              <label class="settings-label">Margin (mm)</label>
+              <div class="slider-container">
+                <input type="range" id="margin" class="slider" min="0" max="50" value="20">
+                <span id="marginValue" class="slider-value">20</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="settings-section">
+            <div class="settings-section-title">Smoothing Options</div>
+            
+            <div class="settings-row">
+              <label class="settings-label">Image Smoothing</label>
+              <div class="slider-container">
+                <input type="range" id="smoothing" class="slider" min="0" max="10" step="0.5" value="2">
+                <span id="smoothingValue" class="slider-value">2</span>
+              </div>
+              <div style="font-size: 0.75rem; color: #6b7280; margin-top: 4px;">
+                Smooths brightness transitions
+              </div>
+            </div>
+            
+            <div class="settings-row">
+              <label class="settings-label">Laser Path Smoothing</label>
+              <div class="slider-container">
+                <input type="range" id="laserSmoothing" class="slider" min="0" max="10" step="0.5" value="3">
+                <span id="laserSmoothingValue" class="slider-value">3</span>
+              </div>
+              <div style="font-size: 0.75rem; color: #6b7280; margin-top: 4px;">
+                Optimizes paths for laser cutting
+              </div>
+            </div>
+            
+            <div class="settings-row">
+              <label class="settings-label">Curve Quality</label>
+              <div class="slider-container">
+                <input type="range" id="curveQuality" class="slider" min="1" max="10" step="1" value="5">
+                <span id="curveQualityValue" class="slider-value">5</span>
+              </div>
+              <div style="font-size: 0.75rem; color: #6b7280; margin-top: 4px;">
+                Higher values = smoother curves for export
+              </div>
+            </div>
+          </div>
+          
+          <div class="settings-section">
+            <div class="settings-section-title">Style Options</div>
+            
+            <div class="settings-row">
+              <label class="settings-label">Line Type</label>
+              <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                <button id="styleCircles" class="toggle-button active">Circles</button>
+                <button id="styleSmooth" class="toggle-button">Smooth</button>
+              </div>
+              <div style="font-size: 0.75rem; color: #6b7280; margin-top: 4px;">
+                Circles show individual points, Smooth connects points with lines
+              </div>
+            </div>
+            
+            <div class="settings-row">
+              <label class="settings-label">Thickness Style</label>
+              <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                <button id="styleDisks" class="toggle-button active">Disks</button>
+                <button id="styleTapered" class="toggle-button">Tapered</button>
+              </div>
+              <div style="font-size: 0.75rem; color: #6b7280; margin-top: 4px;">
+                Disks show constant thickness, Tapered provides smooth thickness transition
+              </div>
+            </div>
+          </div>
+          
+        </div>
+      </div>
+      
+      <div class="content">
+        <div id="welcomeMessage" class="welcome-msg">
+          <i class="fas fa-image welcome-icon"></i>
+          <p>Upload an image to begin</p>
+          <p style="font-size: 0.875rem; margin-top: 0.5rem;">or paste from clipboard (Ctrl+V)</p>
+        </div>
+        
+        <div id="preview" style="display: none; flex-grow: 1; display: flex; flex-direction: column;">
+          <div class="preview-header">
+            <div class="preview-title" id="previewTitle">2D Preview</div>
+            <div class="preview-subtitle" id="previewSubtitle">Flat preview</div>
+          </div>
+          
+          <div class="preview-container">
+            <div class="view-toggle">
+              <button id="viewToggleFront" class="view-toggle-button">Front</button>
+              <button id="viewToggle3D" class="view-toggle-button">3D</button>
+              <button id="viewToggleIso" class="view-toggle-button active">Ortho</button>
+            </div>
+            
+            <div id="container3D" style="width: 100%; height: 100%; display: block;">
+              <div class="view-controls">
+                <button id="viewReset" class="zoom-button"><i class="fas fa-sync-alt"></i></button>
+                <button id="viewSweetSpot" class="zoom-button"><i class="fas fa-eye"></i></button>
+                <button id="viewIsometric" class="zoom-button"><i class="fas fa-cube"></i></button>
+                <button id="viewFront" class="zoom-button"><i class="fas fa-arrows-alt-h"></i></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+    
+    <footer></footer>
+  </div>
+  
+  <!-- Hamburger Menu -->
+  <div id="menuOverlay" class="menu-overlay"></div>
+  <div id="menu" class="menu">
+    <div class="menu-header">
+      <h2>Menu</h2>
+      <button id="menuClose" class="menu-close">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    
+    <div class="menu-content">
+      <div class="menu-section">
+        <div class="menu-section-title">Image</div>
+        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+          <button id="menuUploadButton" class="button">
+            <i class="fas fa-upload"></i> Upload New Image
+          </button>
+          <button id="menuCropButton" class="button button-secondary">
+            <i class="fas fa-crop"></i> Crop Image
+          </button>
+        </div>
+      </div>
+      
+      <div class="menu-section">
+        <div class="menu-section-title">Export</div>
+        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+          <button id="exportSVGButton" class="button">
+            <i class="fas fa-file-export"></i> Export SVG
+          </button>
+          <button id="exportDXFButton" class="button button-secondary">
+            <i class="fas fa-file-export"></i> Export DXF
+          </button>
+        </div>
+      </div>
+      
+      <div class="menu-section">
+        <div class="menu-section-title">Project</div>
+        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+          <button id="saveProjectButton" class="button">
+            <i class="fas fa-save"></i> Save Project
+          </button>
+          <button id="loadProjectButton" class="button button-secondary">
+            <i class="fas fa-folder-open"></i> Load Project
+          </button>
+          <input type="file" id="projectFileInput" accept=".json" style="display: none;">
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Cropper Modal -->
+  <div id="cropperContainer" class="cropper-container" style="display: none;">
+    <div class="cropper-wrapper">
+      <div class="cropper-header">
+        <div class="cropper-title">Crop Image</div>
+        <button id="cropperClose" class="cropper-close">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <div class="cropper-content">
+        <div class="cropper-img-container">
+          <img id="cropperImage" src="" style="max-width: 100%;">
+        </div>
+      </div>
+      
+      <div class="cropper-controls">
+        <button id="cropperCancel" class="button button-outline">Cancel</button>
+        <button id="cropperApply" class="button">Apply Crop</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Application Script -->
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    // Application state
+    const state = {
+      imageData: null,
+      settings: {
+        lineCount: 60, // Reduced for performance
+        ovalWidth: 300,
+        ovalHeight: 200,
+        minThickness: 1,
+        maxThickness: 10,
+        smoothing: 2,
+        laserSmoothing: 3,
+        curveQuality: 5,
+        height: 200,
+        margin: 20,
+        lineStyle: 'circles', // circles or smooth
+        thicknessStyle: 'disks' // disks or tapered
+      },
+      previewMode: 'iso', // Use iso view as default
+      generatedSVG: null,
+      cropper: null,
+      camera3D: {
+        position: { x: 0, y: 0, z: 0 },
+        target: { x: 0, y: 0, z: 0 }
+      }
+    };
+    
+    // DOM Elements
+    const elements = {
+      fileInput: document.getElementById('fileInput'),
+      uploadButton: document.getElementById('uploadButton'),
+      pasteButton: document.getElementById('pasteButton'),
+      menuButton: document.getElementById('menuButton'),
+      menuClose: document.getElementById('menuClose'),
+      menu: document.getElementById('menu'),
+      menuOverlay: document.getElementById('menuOverlay'),
+      menuUploadButton: document.getElementById('menuUploadButton'),
+      menuCropButton: document.getElementById('menuCropButton'),
+      exportSVGButton: document.getElementById('exportSVGButton'),
+      exportDXFButton: document.getElementById('exportDXFButton'),
+      saveProjectButton: document.getElementById('saveProjectButton'),
+      loadProjectButton: document.getElementById('loadProjectButton'),
+      projectFileInput: document.getElementById('projectFileInput'),
+      initialControls: document.getElementById('initialControls'),
+      settingsControls: document.getElementById('settingsControls'),
+      welcomeMessage: document.getElementById('welcomeMessage'),
+      preview: document.getElementById('preview'),
+      container3D: document.getElementById('container3D'),
+      viewToggle3D: document.getElementById('viewToggle3D'),
+      viewToggleIso: document.getElementById('viewToggleIso'),
+      viewToggleFront: document.getElementById('viewToggleFront'),
+      viewReset: document.getElementById('viewReset'),
+      viewSweetSpot: document.getElementById('viewSweetSpot'),
+      viewIsometric: document.getElementById('viewIsometric'),
+      viewFront: document.getElementById('viewFront'),
+      styleCircles: document.getElementById('styleCircles'),
+      styleSmooth: document.getElementById('styleSmooth'),
+      styleDisks: document.getElementById('styleDisks'),
+      styleTapered: document.getElementById('styleTapered'),
+      previewTitle: document.getElementById('previewTitle'),
+      previewSubtitle: document.getElementById('previewSubtitle'),
+      cropperContainer: document.getElementById('cropperContainer'),
+      cropperImage: document.getElementById('cropperImage'),
+      cropperClose: document.getElementById('cropperClose'),
+      cropperCancel: document.getElementById('cropperCancel'),
+      cropperApply: document.getElementById('cropperApply')
+    };
+    
+    // Sliders
+    const sliders = {
+      lineCount: {
+        input: document.getElementById('lineCount'),
+        value: document.getElementById('lineCountValue')
+      },
+      ovalWidth: {
+        input: document.getElementById('ovalWidth'),
+        value: document.getElementById('ovalWidthValue')
+      },
+      ovalHeight: {
+        input: document.getElementById('ovalHeight'),
+        value: document.getElementById('ovalHeightValue')
+      },
+      height: {
+        input: document.getElementById('height'),
+        value: document.getElementById('heightValue')
+      },
+      minThickness: {
+        input: document.getElementById('minThickness'),
+        value: document.getElementById('minThicknessValue')
+      },
+      maxThickness: {
+        input: document.getElementById('maxThickness'),
+        value: document.getElementById('maxThicknessValue')
+      },
+      smoothing: {
+        input: document.getElementById('smoothing'),
+        value: document.getElementById('smoothingValue')
+      },
+      laserSmoothing: {
+        input: document.getElementById('laserSmoothing'),
+        value: document.getElementById('laserSmoothingValue')
+      },
+      curveQuality: {
+        input: document.getElementById('curveQuality'),
+        value: document.getElementById('curveQualityValue')
+      },
+      margin: {
+        input: document.getElementById('margin'),
+        value: document.getElementById('marginValue')
+      }
+    };
+    
+    // Three.js references
+    const three = {
+      scene: null,
+      renderer: null,
+      camera: null,
+      controls: null
+    };
+    
+    // Initialize sliders
+    Object.keys(sliders).forEach(key => {
+      const slider = sliders[key];
+      slider.input.value = state.settings[key];
+      slider.value.textContent = state.settings[key];
+      
+      slider.input.addEventListener('input', () => {
+        const value = slider.input.type === 'range' && slider.input.step === '0.5' 
+          ? parseFloat(slider.input.value) 
+          : parseInt(slider.input.value);
+        
+        state.settings[key] = value;
+        slider.value.textContent = value;
+        
+        updatePreview();
+      });
+    });
+    
+    // Handle window resize
+    window.addEventListener('resize', resizePreviewContainers);
+    
+    // Event Listeners
+    elements.uploadButton.addEventListener('click', () => elements.fileInput.click());
+    elements.menuUploadButton.addEventListener('click', () => elements.fileInput.click());
+    elements.fileInput.addEventListener('change', handleImageUpload);
+    elements.pasteButton.addEventListener('click', () => navigator.clipboard && alert('Use Ctrl+V to paste an image'));
+    
+    elements.menuButton.addEventListener('click', openMenu);
+    elements.menuClose.addEventListener('click', closeMenu);
+    elements.menuOverlay.addEventListener('click', closeMenu);
+    
+    elements.viewToggle3D.addEventListener('click', () => setPreviewMode('3d'));
+    elements.viewToggleIso.addEventListener('click', () => setPreviewMode('iso'));
+    elements.viewToggleFront.addEventListener('click', () => setPreviewMode('front'));
+    elements.viewSweetSpot.addEventListener('click', goToSweetSpot);
+    elements.viewIsometric.addEventListener('click', setIsometricView);
+    elements.viewFront.addEventListener('click', setFrontView);
+    elements.viewReset.addEventListener('click', resetCameraView);
+    
+    // Style toggle event listeners
+    elements.styleCircles.addEventListener('click', function() {
+      elements.styleCircles.classList.add('active');
+      elements.styleSmooth.classList.remove('active');
+      state.settings.lineStyle = 'circles';
+      updatePreview();
+    });
+    
+    elements.styleSmooth.addEventListener('click', function() {
+      elements.styleCircles.classList.remove('active');
+      elements.styleSmooth.classList.add('active');
+      state.settings.lineStyle = 'smooth';
+      updatePreview();
+    });
+    
+    elements.styleDisks.addEventListener('click', function() {
+      elements.styleDisks.classList.add('active');
+      elements.styleTapered.classList.remove('active');
+      state.settings.thicknessStyle = 'disks';
+      updatePreview();
+    });
+    
+    elements.styleTapered.addEventListener('click', function() {
+      elements.styleDisks.classList.remove('active');
+      elements.styleTapered.classList.add('active');
+      state.settings.thicknessStyle = 'tapered';
+      updatePreview();
+    });
+    
+    elements.exportSVGButton.addEventListener('click', exportSVG);
+    elements.exportDXFButton.addEventListener('click', exportDXF);
+    elements.saveProjectButton.addEventListener('click', saveProject);
+    elements.loadProjectButton.addEventListener('click', () => elements.projectFileInput.click());
+    elements.projectFileInput.addEventListener('change', loadProject);
+    
+    elements.menuCropButton.addEventListener('click', openCropper);
+    elements.cropperClose.addEventListener('click', closeCropper);
+    elements.cropperCancel.addEventListener('click', closeCropper);
+    elements.cropperApply.addEventListener('click', applyCrop);
+    
+    // No 2D zoom controls needed
+    
+    // Initialize paste handling
+    document.addEventListener('paste', handlePaste);
+    
+    // Menu functions
+    function openMenu() {
+      elements.menu.classList.add('open');
+      elements.menuOverlay.classList.add('open');
+    }
+    
+    function closeMenu() {
+      elements.menu.classList.remove('open');
+      elements.menuOverlay.classList.remove('open');
+    }
+    
+    // Preview mode functions
+    function setPreviewMode(mode) {
+      state.previewMode = mode;
+      
+      // Reset all toggle buttons
+      elements.viewToggle3D.classList.remove('active');
+      elements.viewToggleIso.classList.remove('active');
+      elements.viewToggleFront.classList.remove('active');
+      
+      // Initialize 3D view if needed
+      if (!three.scene) {
+        setup3DView();
+      }
+      
+      // Always ensure 3D container is visible
+      elements.container3D.style.display = 'block';
+      
+      if (mode === '3d') {
+        elements.viewToggle3D.classList.add('active');
+        elements.previewTitle.textContent = '3D Preview';
+        elements.previewSubtitle.textContent = 'Rotate, pan and zoom with mouse';
+        
+        // Set to default 3D perspective view
+        if (three.camera && three.controls) {
+          const { ovalWidth, ovalHeight, height } = state.settings;
+          three.camera.position.set(ovalWidth * 0.8, height * 1.7, ovalHeight * 1.5);
+          three.controls.target.set(0, height/2, 0);
+          three.controls.update();
+        }
+      } else if (mode === 'iso') {
+        elements.viewToggleIso.classList.add('active');
+        elements.previewTitle.textContent = 'Orthographic View';
+        elements.previewSubtitle.textContent = 'Top-down flattened view';
+        
+        // Set to isometric view
+        setIsometricView();
+      } else if (mode === 'front') {
+        elements.viewToggleFront.classList.add('active');
+        elements.previewTitle.textContent = 'Front View';
+        elements.previewSubtitle.textContent = 'View the structure from the front';
+        
+        // Set to front view
+        setFrontView();
+      }
+      
+      // Make sure the canvas/container fills the available space
+      resizePreviewContainers();
+      
+      updatePreview();
+    }
+    
+    // Image handling functions
+    function handleImageUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => processImage(img);
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+    
+    function handlePaste(e) {
+      if (!e.clipboardData || !e.clipboardData.items) return;
+      
+      const items = e.clipboardData.items;
+      for (const item of items) {
+        if (item.type.indexOf('image') === 0) {
+          const blob = item.getAsFile();
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            const img = new Image();
+            img.onload = () => processImage(img);
+            img.src = event.target.result;
+          };
+          reader.readAsDataURL(blob);
+          break;
+        }
+      }
+    }
+    
+    function processImage(img) {
+      // Create canvas for image processing
+      const canvas = document.createElement('canvas');
+      const maxSize = 800; // Limit processing size for performance
+      
+      // Calculate new dimensions while maintaining aspect ratio
+      let newWidth, newHeight;
+      if (img.width > img.height) {
+        newWidth = Math.min(maxSize, img.width);
+        newHeight = (img.height / img.width) * newWidth;
+      } else {
+        newHeight = Math.min(maxSize, img.height);
+        newWidth = (img.width / img.height) * newHeight;
+      }
+      
+      canvas.width = newWidth;
+      canvas.height = newHeight;
+      
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, newWidth, newHeight);
+      
+      // Convert to grayscale
+      const imageData = ctx.getImageData(0, 0, newWidth, newHeight);
+      const data = imageData.data;
+      
+      for (let i = 0; i < data.length; i += 4) {
+        const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+        data[i] = data[i + 1] = data[i + 2] = gray;
+      }
+      
+      ctx.putImageData(imageData, 0, 0);
+      
+      state.imageData = {
+        canvas,
+        width: newWidth,
+        height: newHeight,
+        ctx,
+        imageData
+      };
+      
+      // Update UI
+      elements.initialControls.style.display = 'none';
+      elements.settingsControls.style.display = 'block';
+      elements.welcomeMessage.style.display = 'none';
+      elements.preview.style.display = 'flex';
+      
+      // Set initial preview mode to orthographic view
+      setPreviewMode('iso');
+    }
+    
+    // Cropper functions
+    function openCropper() {
+      if (!state.imageData) return;
+      
+      elements.cropperImage.src = state.imageData.canvas.toDataURL();
+      elements.cropperContainer.style.display = 'flex';
+      
+      // Initialize cropper
+      if (state.cropper) {
+        state.cropper.destroy();
+      }
+      
+      state.cropper = new Cropper(elements.cropperImage, {
+        aspectRatio: NaN,
+        viewMode: 1,
+        background: false,
+        responsive: true,
+        zoomable: true,
+        scalable: true
+      });
+    }
+    
+    function closeCropper() {
+      elements.cropperContainer.style.display = 'none';
+      if (state.cropper) {
+        state.cropper.destroy();
+        state.cropper = null;
+      }
+    }
+    
+    function applyCrop() {
+      if (!state.cropper) return;
+      
+      // Get cropped canvas
+      const croppedCanvas = state.cropper.getCroppedCanvas();
+      if (!croppedCanvas) return;
+      
+      // Create a new canvas with the cropped dimensions
+      const canvas = document.createElement('canvas');
+      canvas.width = croppedCanvas.width;
+      canvas.height = croppedCanvas.height;
+      
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(croppedCanvas, 0, 0);
+      
+      // Get image data
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      
+      // Update state
+      state.imageData = {
+        canvas,
+        width: canvas.width,
+        height: canvas.height,
+        ctx,
+        imageData
+      };
+      
+      // Close cropper
+      closeCropper();
+      
+      // Update preview
+      updatePreview();
+    }
+    
+    // Preview generation functions
+    function updatePreview() {
+      if (!state.imageData) return;
+      
+      // Resize container to fill available space
+      resizePreviewContainers();
+      
+      // Update 3D view only since we're not using 2D view anymore
+      update3DView();
+    }
+    
+    // Ensure preview container fills available space
+    function resizePreviewContainers() {
+      const previewContainer = document.querySelector('.preview-container');
+      if (!previewContainer) return;
+      
+      // Calculate available height and width
+      const containerHeight = previewContainer.clientHeight;
+      const containerWidth = previewContainer.clientWidth;
+      
+      // Make sure 3D view takes the full container
+      elements.container3D.style.width = '100%';
+      elements.container3D.style.height = '100%';
+      
+      // Resize renderer if it exists
+      if (three.renderer && three.camera) {
+        three.renderer.setSize(containerWidth, containerHeight);
+        three.camera.aspect = containerWidth / containerHeight;
+        three.camera.updateProjectionMatrix();
+      }
+    }
+    
+    function generateLines() {
+      if (!state.imageData) return null;
+      
+      const { ctx, width, height } = state.imageData;
+      const { lineCount, ovalWidth, ovalHeight, minThickness, maxThickness, smoothing } = state.settings;
+      
+      // Calculate line spacing
+      const spacing = ovalWidth / (lineCount + 1);
+      
+      // Create lines
+      const lines = [];
+      
+      for (let i = 0; i < lineCount; i++) {
+        const x = (i + 1) * spacing - ovalWidth / 2;
+        
+        // Sample points along this vertical line
+        const samples = [];
+        const sampleCount = Math.floor(height);
+        
+        for (let j = 0; j < sampleCount; j++) {
+          const y = j * (height / sampleCount);
+          
+          // Get pixel brightness (0-255)
+          const pixelX = Math.floor((x + ovalWidth / 2) * (width / ovalWidth));
+          const pixelY = Math.floor(y * (height / ovalHeight));
+          
+          if (pixelX >= 0 && pixelX < width && pixelY >= 0 && pixelY < height) {
+            const index = (pixelY * width + pixelX) * 4;
+            const brightness = state.imageData.imageData.data[index]; // Grayscale, so r=g=b
+            
+            // Map brightness to thickness (invert: darker = thicker)
+            let thickness = minThickness + (maxThickness - minThickness) * (1 - brightness / 255);
+            
+            samples.push({
+              y,
+              thickness
+            });
+          }
+        }
+        
+        // Apply smoothing if needed
+        if (smoothing > 0) {
+          const smoothedSamples = [];
+          const kernelSize = Math.floor(smoothing * 2) + 1;
+          
+          for (let j = 0; j < samples.length; j++) {
+            let sum = 0;
+            let count = 0;
+            
+            for (let k = -Math.floor(kernelSize / 2); k <= Math.floor(kernelSize / 2); k++) {
+              const idx = j + k;
+              if (idx >= 0 && idx < samples.length) {
+                sum += samples[idx].thickness;
+                count++;
+              }
+            }
+            
+            smoothedSamples.push({
+              y: samples[j].y,
+              thickness: sum / count
+            });
+          }
+          
+          lines.push({
+            x,
+            samples: smoothedSamples
+          });
+        } else {
+          lines.push({
+            x,
+            samples
+          });
+        }
+      }
+      
+      return lines;
+    }
+    
+    function generateSVG(lines) {
+      if (!lines || !state.imageData) return null;
+      
+      const { ovalWidth, ovalHeight, margin, height, laserSmoothing, curveQuality, lineStyle, thicknessStyle } = state.settings;
+      
+      // SVG dimensions with margins (all measurements in mm)
+      const svgWidth = ovalWidth + margin * 2;
+      const svgHeight = ovalHeight + margin * 2 + height;
+
+      // Start SVG string with mm units
+      let svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgWidth} ${svgHeight}" width="${svgWidth}mm" height="${svgHeight}mm">`;
+      
+      // SVG metadata and settings for laser cutting
+      svgContent += `
+  <!-- Generator: Anamorphic Portrait Generator -->
+  <!-- Units: mm -->
+  <!-- Physical Size: 120mm × 300mm -->
+  <!-- Line Style: ${lineStyle} -->
+  <!-- Thickness Style: ${thicknessStyle} -->`;
+      
+      // Add top and bottom ovals
+      svgContent += `<ellipse cx="${svgWidth / 2}" cy="${margin + ovalHeight / 2}" rx="${ovalWidth / 2}" ry="${ovalHeight / 2}" fill="none" stroke="black" stroke-width="1"/>`;
+      svgContent += `<ellipse cx="${svgWidth / 2}" cy="${margin + ovalHeight + height + ovalHeight / 2}" rx="${ovalWidth / 2}" ry="${ovalHeight / 2}" fill="none" stroke="black" stroke-width="1"/>`;
+      
+      // Add vertical lines with thickness based on lineStyle and thicknessStyle
+      if (lineStyle === 'circles') {
+        // Generate SVG with circles at each sample point
+        lines.forEach(line => {
+          const x = line.x + svgWidth / 2;
+          
+          // Sample points at regular intervals based on curve quality
+          const sampleEvery = Math.max(1, Math.floor(line.samples.length / (curveQuality * 5)));
+          
+          line.samples.forEach((sample, idx) => {
+            if (idx % sampleEvery === 0 || idx === 0 || idx === line.samples.length - 1) {
+              const y = sample.y + margin + ovalHeight / 2;
+              
+              // Adjust radius based on thicknessStyle
+              let radius = sample.thickness / 2;
+              
+              // If using tapered style, adjust circle size based on position
+              if (thicknessStyle === 'tapered') {
+                // Calculate a position-based factor (closer to top/bottom = thinner)
+                const positionFactor = 1 - (Math.abs((y - (margin + ovalHeight / 2)) / height) * 0.7);
+                radius = radius * positionFactor;
+              }
+              
+              // Only add circles with meaningful thickness
+              if (radius >= 0.5) {
+                svgContent += `<circle cx="${x}" cy="${y}" r="${radius}" fill="black"/>`;
+              }
+            }
+          });
+        });
+      } else {
+        // Generate SVG with continuous lines (smooth style)
+        if (laserSmoothing > 0) {
+          lines.forEach(line => {
+            const x = line.x + svgWidth / 2;
+            
+            // Sample points based on curve quality
+            const sampleEvery = Math.max(1, Math.floor(line.samples.length / (curveQuality * 10)));
+            
+            // For each line, we create a path
+            let pathPoints = [];
+            
+            // First collect all points
+            line.samples.forEach((sample, idx) => {
+              if (idx % sampleEvery === 0 || idx === 0 || idx === line.samples.length - 1) {
+                const y = sample.y + margin + ovalHeight / 2;
+                const thickness = sample.thickness;
+                
+                // Add the point and its thickness
+                pathPoints.push({ y, thickness });
+              }
+            });
+            
+            // Now create paths with varying thickness for each section
+            for (let i = 0; i < pathPoints.length - 1; i++) {
+              const startY = pathPoints[i].y;
+              const endY = pathPoints[i+1].y;
+              let startThickness = pathPoints[i].thickness;
+              let endThickness = pathPoints[i+1].thickness;
+              
+              // Apply tapered thickness style if selected
+              if (thicknessStyle === 'tapered') {
+                // Calculate position factors for tapering (center = thickest, ends = thinner)
+                const centerY = margin + ovalHeight / 2 + height / 2;
+                const startFactor = 1 - (Math.abs(startY - centerY) / (height * 0.8));
+                const endFactor = 1 - (Math.abs(endY - centerY) / (height * 0.8));
+                
+                startThickness = startThickness * Math.max(0.3, startFactor);
+                endThickness = endThickness * Math.max(0.3, endFactor);
+              }
+              
+              // Use average thickness for this segment
+              const avgThickness = (startThickness + endThickness) / 2;
+              
+              // Apply laser smoothing - reduce jaggedness by using rounded line caps
+              svgContent += `<line x1="${x}" y1="${startY}" x2="${x}" y2="${endY}" 
+                stroke="black" stroke-width="${avgThickness}" 
+                stroke-linecap="round"/>`;
+            }
+          });
+        } else {
+          // Standard non-smoothed version
+          lines.forEach(line => {
+            const x = line.x + svgWidth / 2;
+            
+            line.samples.forEach((sample, idx) => {
+              if (idx < line.samples.length - 1) {
+                const y1 = sample.y + margin + ovalHeight / 2;
+                const y2 = line.samples[idx + 1].y + margin + ovalHeight / 2;
+                let thickness = sample.thickness;
+                
+                // Apply tapered thickness style if selected
+                if (thicknessStyle === 'tapered') {
+                  // Calculate position factor for tapering (center = thickest, ends = thinner)
+                  const centerY = margin + ovalHeight / 2 + height / 2;
+                  const positionFactor = 1 - (Math.abs(y1 - centerY) / (height * 0.8));
+                  thickness = thickness * Math.max(0.3, positionFactor);
+                }
+                
+                // Draw line segment with proper thickness
+                svgContent += `<line x1="${x}" y1="${y1}" x2="${x}" y2="${y2}" 
+                  stroke="black" stroke-width="${thickness}" 
+                  stroke-linecap="round"/>`;
+              }
+            });
+          });
+        }
+      }
+      
+      // Close SVG
+      svgContent += '</svg>';
+      
+      return svgContent;
+    }
+    
+    // SVG generation for export
+    function generateSVGPreview() {
+      if (!state.imageData) return null;
+      
+      const lines = generateLines();
+      if (!lines) return null;
+      
+      // Ensure we're using the current line and thickness style settings
+      const svgContent = generateSVG(lines);
+      state.generatedSVG = svgContent;
+      
+      return svgContent;
+    }
+    
+    // 3D view functions
+    function setup3DView() {
+      const container = elements.container3D;
+      const width = container.clientWidth;
+      const height = container.clientHeight || 400; // Default height if container has no height
+      
+      // Create scene
+      three.scene = new THREE.Scene();
+      three.scene.background = new THREE.Color(0xf5f5f5);
+      
+      // Optimize lighting setup for performance
+      // Ambient light for base illumination (more efficient)
+      const ambientLight = new THREE.AmbientLight(0x808080, 0.8);
+      three.scene.add(ambientLight);
+      
+      // Single directional light for better performance
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      directionalLight.position.set(1, 2, 1);
+      three.scene.add(directionalLight);
+      
+      // Create camera with optimized settings
+      three.perspectiveCamera = new THREE.PerspectiveCamera(45, width / height, 1, 2000);
+      three.perspectiveCamera.position.set(0, 200, 500);
+      
+      // Set the active camera
+      three.camera = three.perspectiveCamera;
+      
+      // Create renderer with performance optimizations
+      three.renderer = new THREE.WebGLRenderer({ 
+        antialias: true,
+        powerPreference: 'high-performance',
+        precision: 'mediump' // Medium precision for better performance
+      });
+      three.renderer.setPixelRatio(window.devicePixelRatio > 1 ? 1.5 : 1); // Limit pixel ratio for performance
+      three.renderer.setSize(width, height);
+      container.innerHTML = ''; // Clear container
+      container.appendChild(three.renderer.domElement);
+      
+      // Initialize OrbitControls with optimized settings
+      try {
+        three.controls = new OrbitControls(three.camera, three.renderer.domElement);
+        three.controls.enableDamping = true;
+        three.controls.dampingFactor = 0.2;
+        three.controls.target.set(0, 0, 0);
+        three.controls.minDistance = 50; // Prevent zooming too close
+        three.controls.maxDistance = 1500; // Prevent zooming too far
+        three.controls.enablePan = true;
+        three.controls.screenSpacePanning = true;
+        three.controls.autoRotate = false;
+      } catch (error) {
+        console.warn('OrbitControls initialization failed:', error);
+      }
+      
+      // Add sweet spot indicator with optimized geometry
+      const sweetSpotGeometry = new THREE.SphereGeometry(5, 16, 16); // Reduced segments
+      const sweetSpotMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+      const sweetSpot = new THREE.Mesh(sweetSpotGeometry, sweetSpotMaterial);
+      sweetSpot.position.set(0, 0, 300);
+      sweetSpot.userData = { type: 'anamorphic-line' }; // Add to user data for cleanup
+      three.scene.add(sweetSpot);
+      
+      // More efficient animation loop with frame limiting
+      let lastFrameTime = 0;
+      const frameInterval = 1000 / 30; // Target 30 fps for efficiency
+      
+      function animate(currentTime) {
+        requestAnimationFrame(animate);
+        
+        // Limit frame rate for performance
+        const elapsed = currentTime - lastFrameTime;
+        if (elapsed < frameInterval) return;
+        
+        lastFrameTime = currentTime - (elapsed % frameInterval);
+        
+        if (three.controls) {
+          three.controls.update();
+        }
+        
+        if (three.renderer && three.scene && three.camera) {
+          three.renderer.render(three.scene, three.camera);
+        }
+      }
+      
+      animate(0);
+      
+      // More efficient resize handler with debounce
+      let resizeTimeout;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+          if (state.previewMode === '3d' || state.previewMode === 'iso') {
+            const newWidth = container.clientWidth;
+            const newHeight = container.clientHeight || 400;
+            
+            if (three.camera) {
+              three.camera.aspect = newWidth / newHeight;
+              three.camera.updateProjectionMatrix();
+            }
+            
+            if (three.renderer) {
+              three.renderer.setSize(newWidth, newHeight);
+            }
+          }
+        }, 250); // Debounce resize events
+      });
+    }
+    
+    function update3DView() {
+      if (!three.scene || !state.imageData) return;
+      
+      // Remove previous line objects
+      const objectsToRemove = [];
+      three.scene.traverse((object) => {
+        if (object.userData && object.userData.type === 'anamorphic-line') {
+          objectsToRemove.push(object);
+        }
+      });
+      
+      objectsToRemove.forEach((object) => {
+        // Dispose geometry and materials to prevent memory leaks
+        if (object.geometry) object.geometry.dispose();
+        if (object.material) {
+          if (Array.isArray(object.material)) {
+            object.material.forEach(material => material.dispose());
+          } else {
+            object.material.dispose();
+          }
+        }
+        three.scene.remove(object);
+      });
+      
+      // Generate new lines (using optimized line count)
+      const lines = generateLines();
+      if (!lines) return;
+      
+      const { ovalWidth, ovalHeight, height, lineStyle, thicknessStyle } = state.settings;
+      
+      // Create top and bottom ovals (using fewer segments for better performance)
+      const segments = Math.min(64, Math.max(24, Math.floor(ovalWidth / 10))); // Appropriate segments based on size
+      const ovalShape = new THREE.Shape();
+      for (let i = 0; i <= segments; i++) {
+        const angle = (i / segments) * Math.PI * 2;
+        const x = Math.cos(angle) * (ovalWidth / 2);
+        const y = Math.sin(angle) * (ovalHeight / 2);
+        
+        if (i === 0) {
+          ovalShape.moveTo(x, y);
+        } else {
+          ovalShape.lineTo(x, y);
+        }
+      }
+      
+      // Create a group for all objects to make scene management easier
+      const modelGroup = new THREE.Group();
+      modelGroup.userData = { type: 'anamorphic-line' };
+      three.scene.add(modelGroup);
+      
+      // Base setup - both ovals are horizontal (flat on table)
+      // Top oval - actually at the top (y is up)
+      const topOvalGeometry = new THREE.ShapeGeometry(ovalShape);
+      const topOvalMaterial = new THREE.MeshBasicMaterial({ 
+        color: 0x333333, 
+        wireframe: false,
+        side: THREE.DoubleSide
+      });
+      const topOval = new THREE.Mesh(topOvalGeometry, topOvalMaterial);
+      // Rotate to lay flat
+      topOval.rotation.x = -Math.PI / 2;
+      topOval.position.y = height;
+      modelGroup.add(topOval);
+      
+      // Bottom oval - at the base (on the table)
+      const bottomOval = new THREE.Mesh(topOvalGeometry, topOvalMaterial.clone()); // Reuse geometry
+      // Rotate to lay flat
+      bottomOval.rotation.x = -Math.PI / 2;
+      bottomOval.position.y = 0;
+      modelGroup.add(bottomOval);
+      
+      // Update scale text - clear existing ones first
+      const existingText = elements.container3D.querySelector('.scale-text');
+      if (existingText) existingText.remove();
+      
+      // Add a text label to show dimensions
+      const scaleText = document.createElement('div');
+      scaleText.className = 'scale-text';
+      scaleText.style.position = 'absolute';
+      scaleText.style.bottom = '10px';
+      scaleText.style.left = '10px';
+      scaleText.style.color = '#666';
+      scaleText.style.fontSize = '0.8rem';
+      scaleText.style.padding = '5px';
+      scaleText.style.backgroundColor = 'rgba(255,255,255,0.7)';
+      scaleText.style.borderRadius = '3px';
+      scaleText.innerHTML = `${ovalWidth}mm × ${ovalHeight}mm × ${height}mm`;
+      elements.container3D.appendChild(scaleText);
+      
+      // Add a transparent base/table (larger than the oval for better context)
+      const tableGeometry = new THREE.PlaneGeometry(ovalWidth * 1.8, ovalHeight * 1.8);
+      const tableMaterial = new THREE.MeshBasicMaterial({ 
+        color: 0x888888, 
+        transparent: true,
+        opacity: 0.2,
+        side: THREE.DoubleSide
+      });
+      const table = new THREE.Mesh(tableGeometry, tableMaterial);
+      table.rotation.x = -Math.PI / 2; // Lay flat
+      table.position.y = -0.5; // Just below the bottom oval
+      modelGroup.add(table);
+      
+      // Create shared geometries and materials for rods (major performance improvement)
+      const rodMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0x000000,
+        roughness: 0.7,
+        metalness: 0.2
+      });
+      
+      const diskMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0x000000, 
+        roughness: 0.5,
+        metalness: 0.3
+      });
+      
+      // Create geometry instances that can be reused
+      const baseRodGeometry = new THREE.CylinderGeometry(0.75, 0.75, height, 6); // Reduced geometry complexity
+      const diskTemplates = {};
+      
+      // Process all lines
+      lines.forEach(line => {
+        const x = line.x;
+        
+        // Calculate Z offset based on position
+        const xNormalized = x / (ovalWidth / 2);
+        const distanceFromEdgeX = Math.abs(1 - Math.abs(xNormalized));
+        const edgeMargin = 5; // Reduced margin for better performance
+        const maxOffset = (ovalHeight / 2) - edgeMargin;
+        const safeOffset = maxOffset * distanceFromEdgeX;
+        const zOffset = (Math.random() * 2 - 1) * safeOffset;
+        
+        // Only create the base rod if using uniform thickness and not tapered style
+        if (thicknessStyle === 'disks' && lineStyle === 'smooth') {
+          const rod = new THREE.Mesh(baseRodGeometry, rodMaterial);
+          rod.position.set(x, height/2, zOffset);
+          modelGroup.add(rod);
+        }
+        
+        if (lineStyle === 'circles') {
+          // CIRCLES STYLE: Create disks at sample points
+          // Sample fewer points for disks (improved performance)
+          // Scale sampling based on height - show more detail for taller structures
+          const sampleInterval = Math.max(8, Math.floor(20 - (height / 20)));
+          
+          // Process samples for this line to create disks
+          const samplesLength = line.samples.length;
+          for (let idx = 0; idx < samplesLength; idx += sampleInterval) {
+            if (idx < samplesLength - 1) {
+              const sample = line.samples[idx];
+              const y = sample.y / ovalHeight * height;
+              
+              // Round thickness to nearest 0.5 to reuse geometries
+              const thickness = Math.round(sample.thickness * 2) / 2;
+              
+              // Skip very small disks
+              if (thickness < 1.5) continue;
+              
+              // Create or reuse disk geometry
+              if (!diskTemplates[thickness]) {
+                diskTemplates[thickness] = new THREE.CylinderGeometry(thickness * 0.8, thickness * 0.8, 2, 8);
+              }
+              
+              // Create the disk
+              const disk = new THREE.Mesh(diskTemplates[thickness], diskMaterial);
+              disk.position.set(x, y, zOffset);
+              disk.rotation.x = Math.PI / 2;
+              modelGroup.add(disk);
+            }
+          }
+        } else {
+          // SMOOTH STYLE: Create continuous tapered or uniform rod
+          if (thicknessStyle === 'tapered') {
+            const segments = Math.min(20, Math.max(10, line.samples.length / 8));
+            const segmentStep = line.samples.length / segments;
+            
+            // Create points for the rod
+            const points = [];
+            const radiusSegments = 8; // Number of sides for the rod
+            
+            // Add base points at top and bottom for tapered rod
+            points.push(new THREE.Vector3(0, 0, 0)); // Bottom point
+            
+            // Sample points along the rod with their thicknesses
+            for (let i = 0; i <= segments; i++) {
+              const sampleIdx = Math.floor(i * segmentStep);
+              if (sampleIdx < line.samples.length) {
+                const sample = line.samples[sampleIdx];
+                const yPos = sample.y / ovalHeight * height;
+                const radius = Math.max(0.5, sample.thickness * 0.6); // Adjust thickness
+                
+                points.push(new THREE.Vector3(radius, yPos, 0));
+              }
+            }
+            
+            points.push(new THREE.Vector3(0, height, 0)); // Top point
+            
+            // Create the tapered rod geometry
+            // We use a lathe geometry which rotates a 2D shape around an axis
+            const path = new THREE.CatmullRomCurve3(points);
+            const taperedGeometry = new THREE.TubeGeometry(
+              path,
+              segments,
+              0.5,  // Base radius
+              radiusSegments,
+              false  // Not closed
+            );
+            
+            // Create and position the tapered rod
+            const taperedRod = new THREE.Mesh(taperedGeometry, rodMaterial.clone());
+            taperedRod.position.set(x, 0, zOffset);
+            modelGroup.add(taperedRod);
+          }
+          // For disks style with smooth lines, we already added the base rod above
+        }
+      });
+      
+      // Position camera based on current view mode
+      if (three.camera) {
+        if (state.previewMode === '3d') {
+          // Normal 3D view
+          three.camera.position.set(ovalWidth * 0.8, height * 1.7, ovalHeight * 1.5);
+          three.controls.target.set(0, height/2, 0);
+        } else if (state.previewMode === 'iso') {
+          // Isometric view
+          setIsometricView();
+        }
+        three.controls.update();
+      }
+    }
+    
+    function goToSweetSpot() {
+      if (!three.camera || !three.controls) return;
+      
+      const { ovalWidth, ovalHeight, height } = state.settings;
+      
+      // Position camera at the sweet spot for anamorphic effect viewing
+      // For anamorphic sculptures, the ideal viewing position is from one specific angle
+      // where the scattered rods align to form the image
+      three.camera.position.set(0, height * 3, 0); // Position directly above to see the anamorphic effect
+      three.controls.target.set(0, height/2, 0); // Look at center of structure
+      three.controls.update();
+      
+      // Store camera position for later restoration
+      state.camera3D.position = { ...three.camera.position };
+      state.camera3D.target = { x: 0, y: height/2, z: 0 };
+    }
+    
+    function setIsometricView() {
+      if (!three.camera || !three.controls) return;
+      
+      const { ovalWidth, ovalHeight, height } = state.settings;
+      
+      // Get the max dimension to determine viewing distance
+      const maxDimension = Math.max(ovalWidth, ovalHeight, height);
+      const distance = maxDimension * 1.5;
+      
+      // Switch to orthographic camera for true orthographic view
+      if (!(three.camera instanceof THREE.OrthographicCamera)) {
+        // Create a new orthographic camera if we don't have one
+        const aspect = three.renderer.domElement.clientWidth / three.renderer.domElement.clientHeight;
+        const viewSize = maxDimension * 1.2;
+        const orthoCamera = new THREE.OrthographicCamera(
+          -viewSize * aspect / 2, viewSize * aspect / 2,  // left, right
+          viewSize / 2, -viewSize / 2,                    // top, bottom
+          0.1, distance * 4                               // near, far
+        );
+        
+        // Store the perspective camera
+        three.perspectiveCamera = three.camera;
+        
+        // Set the new orthographic camera
+        three.camera = orthoCamera;
+        
+        // Update controls to use the orthographic camera
+        three.controls.object = three.camera;
+      }
+      
+      // Set front orthographic view
+      three.camera.position.set(0, height/2, distance);
+      three.controls.target.set(0, height/2, 0);
+      three.camera.lookAt(0, height/2, 0);
+      three.controls.update();
+      
+      // Store camera position for later restoration
+      state.camera3D.position = { ...three.camera.position };
+      state.camera3D.target = { x: 0, y: height/2, z: 0 };
+    }
+    
+    function setFrontView() {
+      if (!three.camera || !three.controls) return;
+      
+      const { ovalWidth, ovalHeight, height } = state.settings;
+      
+      // Get the max dimension to determine viewing distance
+      const maxDimension = Math.max(ovalWidth, ovalHeight, height);
+      const distance = maxDimension * 1.5;
+      
+      // Return to perspective camera if we were in orthographic view
+      if (three.camera instanceof THREE.OrthographicCamera && three.perspectiveCamera) {
+        // Switch back to perspective camera
+        three.camera = three.perspectiveCamera;
+        
+        // Update controls to use the perspective camera
+        three.controls.object = three.camera;
+      }
+      
+      // Position camera directly in front of the model
+      three.camera.position.set(0, height/2, distance);
+      three.controls.target.set(0, height/2, 0);
+      three.camera.lookAt(0, height/2, 0);
+      three.controls.update();
+      
+      // Store camera position for later restoration
+      state.camera3D.position = { ...three.camera.position };
+      state.camera3D.target = { x: 0, y: height/2, z: 0 };
+    }
+    
+    function resetCameraView() {
+      if (!three.camera || !three.controls) return;
+      
+      const { ovalWidth, ovalHeight, height } = state.settings;
+      
+      // Set to default view based on current mode
+      if (state.previewMode === '3d') {
+        // Ensure we're using perspective camera for 3D mode
+        if (three.camera instanceof THREE.OrthographicCamera && three.perspectiveCamera) {
+          three.camera = three.perspectiveCamera;
+          three.controls.object = three.camera;
+        }
+        
+        // Standard 3D perspective view
+        three.camera.position.set(ovalWidth * 0.8, height * 1.7, ovalHeight * 1.5);
+        three.controls.target.set(0, height/2, 0);
+      } else if (state.previewMode === 'iso') {
+        // Set to isometric view with orthographic camera
+        setIsometricView();
+      } else if (state.previewMode === 'front') {
+        // Set to front view
+        setFrontView();
+      }
+      
+      three.controls.update();
+    }
+    
+    // Line style toggle function
+    function setLineStyle(style) {
+      if (style === state.settings.lineStyle) return;
+      
+      state.settings.lineStyle = style;
+      
+      // Update style buttons
+      elements.styleCircles.classList.remove('active');
+      elements.styleSmooth.classList.remove('active');
+      
+      if (style === 'circles') {
+        elements.styleCircles.classList.add('active');
+      } else {
+        elements.styleSmooth.classList.add('active');
+      }
+      
+      // Regenerate preview
+      updatePreview();
+    }
+    
+    // Thickness style toggle function
+    function setThicknessStyle(style) {
+      if (style === state.settings.thicknessStyle) return;
+      
+      state.settings.thicknessStyle = style;
+      
+      // Update style buttons
+      elements.styleDisks.classList.remove('active');
+      elements.styleTapered.classList.remove('active');
+      
+      if (style === 'disks') {
+        elements.styleDisks.classList.add('active');
+      } else {
+        elements.styleTapered.classList.add('active');
+      }
+      
+      // Regenerate preview
+      updatePreview();
+    }
+    
+    // Export functions
+    function exportSVG() {
+      if (!state.generatedSVG) {
+        // Generate SVG if not already generated
+        state.generatedSVG = generateSVGPreview();
+        if (!state.generatedSVG) return;
+      }
+      
+      const blob = new Blob([state.generatedSVG], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'anamorphic-portrait.svg';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+    
+    function exportDXF() {
+      alert('DXF export would be implemented here using a DXF generation library');
+      // In a real implementation, we would convert the SVG paths to DXF format
+    }
+    
+    // Project save/load functions
+    function saveProject() {
+      if (!state.imageData) return;
+      
+      const projectData = {
+        settings: state.settings,
+        imageDataURL: state.imageData.canvas.toDataURL()
+      };
+      
+      const blob = new Blob([JSON.stringify(projectData)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'anamorphic-project.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+    
+    function loadProject(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const projectData = JSON.parse(event.target.result);
+          
+          // Load settings
+          state.settings = projectData.settings;
+          
+          // Update sliders
+          Object.keys(state.settings).forEach(key => {
+            if (sliders[key]) {
+              sliders[key].input.value = state.settings[key];
+              sliders[key].value.textContent = state.settings[key];
+            }
+          });
+          
+          // Load image
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            
+            state.imageData = {
+              canvas,
+              width: canvas.width,
+              height: canvas.height,
+              ctx,
+              imageData
+            };
+            
+            // Update UI
+            elements.initialControls.style.display = 'none';
+            elements.settingsControls.style.display = 'block';
+            elements.welcomeMessage.style.display = 'none';
+            elements.preview.style.display = 'flex';
+            
+            // No 2D zoom state needed anymore
+            
+            // Update preview
+            updatePreview();
+          };
+          img.src = projectData.imageDataURL;
+        } catch (error) {
+          console.error('Error loading project:', error);
+          alert('Invalid project file');
+        }
+      };
+      reader.readAsText(file);
+      
+      // Reset file input
+      e.target.value = '';
+    }
+  </script>
+</body>
+</html>
