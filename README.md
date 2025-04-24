@@ -35,10 +35,12 @@ The Anamorphic Portrait Generator converts standard 2D images into anamorphic li
 - **Grayscale Conversion**: Automatic conversion to grayscale
 
 ### Customization Options
-- **Line Count**: Adjust the number of vertical lines (20-200)
+- **Line Count**: Adjust the number of vertical lines (10-60)
 - **Oval Dimensions**: Width and height of the supporting ovals
 - **Structure Height**: Overall height of the sculpture
 - **Thickness Control**: Min and max thickness of the vertical rods
+- **Line Style**: Choose between circles (discrete points) or smooth lines
+- **Thickness Style**: Choose between disks (constant) or tapered (smoothly varying)
 - **Margins**: Spacing around the structure
 
 ### Smoothing Options
@@ -47,7 +49,8 @@ The Anamorphic Portrait Generator converts standard 2D images into anamorphic li
 - **Curve Quality**: Controls export detail level for manufacturing
 
 ### Preview Modes
-- **2D Preview**: Flat representation of the structure
+- **Orthographic View**: Flat representation with orthographic projection
+- **Front View**: Front perspective view of the structure
 - **3D Preview**: Interactive 3D model with orbit controls
 - **Sweet Spot**: Button to view the structure from the optimal viewing angle
 
@@ -112,7 +115,7 @@ The physical sculpture maintains a 10mm margin from the edges of the oval plates
 ## Local Development
 
 1. Clone the repository
-2. Open `anamorphic-html.html` in a modern browser
+2. Open `index.html` in a modern browser
 3. No build process required - pure HTML/JS implementation
 
 ## License
