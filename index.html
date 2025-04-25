@@ -42,65 +42,89 @@
     header {
       background-color: #2563eb;
       color: white;
-      padding: 1rem;
+      padding: 0.75rem 1rem;
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      justify-content: space-between;
       flex-shrink: 0;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
     
     header h1 {
       font-size: 1.25rem;
-      font-weight: bold;
+      font-weight: 600;
+      margin: 0;
     }
     
     .header-subtitle {
       font-size: 0.875rem;
       opacity: 0.9;
+      margin-top: 0.25rem;
     }
     
     main {
       display: flex;
-      flex-direction: row;
+      flex-direction: column;
       flex-grow: 1;
-      padding: 1rem;
-      gap: 1rem;
+      height: 100%;
+      padding: 0;
+      gap: 0;
       overflow: hidden;
     }
     
-    .sidebar {
-      background-color: white;
-      border-radius: 0.5rem;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
-      padding: 1rem;
-      width: 280px;
-      max-width: 280px;
+    .parameters-panel {
+      height: 33%;
+      min-height: 180px;
+      max-height: 40vh;
+      width: 100%;
       overflow-y: auto;
-      max-height: 100%;
-      flex-shrink: 0;
+      padding: 2rem 2.5rem;
+      background: #fff;
+      border-bottom: 1px solid #e5e7eb;
     }
     
-    @media (max-width: 767px) {
-      main {
-        flex-direction: column;
-      }
-      
-      .sidebar {
-        width: 100%;
-        max-width: 100%;
-        max-height: 50vh;
-      }
-    }
-    
-    .content {
+    .viewer-panel {
       flex-grow: 1;
-      background-color: white;
-      border-radius: 0.5rem;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
-      padding: 1rem;
+      height: 67%;
+      width: 100%;
+      background: #fff;
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      padding: 0;
+      border-radius: 0;
+      box-shadow: none;
+    }
+    
+    /* Separator between panels */
+    .panel-separator {
+      height: 3px;
+      width: 100%;
+      background-color: #e5e7eb;
+      cursor: row-resize;
+    }
+    
+    @media (max-width: 767px) {
+      .parameters-panel {
+        min-height: 120px;
+        max-height: 40vh;
+        padding: 1rem;
+      }
+      .viewer-panel {
+        min-height: 60vh;
+      }
+      header {
+        padding: 0.625rem 1rem;
+      }
+      
+      .header-actions {
+        display: flex;
+        gap: 0.5rem;
+      }
+      
+      .menu-button {
+        margin-right: 0;
+      }
     }
     
     .welcome-msg {
@@ -364,8 +388,7 @@
       justify-content: center;
       width: 2.5rem;
       height: 2.5rem;
-      border-radius: 50%;
-      transition: background-color 0.2s;
+      padding: 0;
     }
     
     .menu-button:hover {
@@ -375,19 +398,19 @@
     .menu {
       position: fixed;
       top: 0;
-      right: -300px;
+      left: -300px;
       width: 300px;
       height: 100vh;
       background-color: white;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-      transition: right 0.3s ease;
+      transition: left 0.3s ease;
       z-index: 1000;
       display: flex;
       flex-direction: column;
     }
     
     .menu.open {
-      right: 0;
+      left: 0;
     }
     
     .menu-header {
@@ -491,42 +514,48 @@
       position: fixed;
       top: 0;
       left: 0;
-      width: 100%;
-      height: 100%;
+      width: 100vw;
+      height: 100vh;
       background-color: rgba(0, 0, 0, 0.8);
-      z-index: 1100;
+      z-index: 9000;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
     }
     
-    .cropper-wrapper {
-      width: 90%;
-      max-width: 800px;
-      max-height: 80vh;
-      background-color: white;
-      border-radius: 0.5rem;
-      overflow: hidden;
+    .cropper-modal-wrapper {
+      position: relative;
+      max-width: 600px;
+      width: 95vw;
+      background-color: #ffffff;
+      border-radius: 0.75rem;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+      z-index: 9100;
+    }
+    
+    .cropper-modal-content {
       display: flex;
       flex-direction: column;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
+      max-height: 90vh;
+      background-color: #ffffff;
+      border-radius: 0.75rem;
+      overflow: hidden;
     }
     
     .cropper-header {
-      padding: 1rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      padding: 1rem 1.25rem;
+      background-color: #ffffff;
       border-bottom: 1px solid #e5e7eb;
+      z-index: 9200;
     }
     
     .cropper-title {
       font-weight: bold;
       font-size: 1.125rem;
+      color: #111827;
     }
     
     .cropper-close {
@@ -537,44 +566,156 @@
       color: #4b5563;
     }
     
-    .cropper-content {
-      padding: 1rem;
-      flex-grow: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-    
-    .cropper-img-container {
-      flex-grow: 1;
+    .cropper-crop-area {
       position: relative;
+      padding: 1rem;
+      background-color: #ffffff;
+      min-height: 200px;
+      max-height: 60vh;
       overflow: hidden;
-      margin-bottom: 1rem;
     }
     
-    .cropper-controls {
+    .cropper-image-wrapper {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #ffffff;
+      z-index: 9150;
+    }
+    
+    #cropperImage {
+      max-width: 100%;
+      max-height: 50vh;
+      object-fit: contain;
+      background-color: #ffffff;
+    }
+    
+    .cropper-footer {
       display: flex;
       justify-content: flex-end;
       gap: 0.5rem;
-      padding: 1rem;
+      padding: 1rem 1.25rem;
+      background-color: #ffffff;
       border-top: 1px solid #e5e7eb;
+      z-index: 9200;
+    }
+    
+    /* Override cropperjs styles with !important to ensure they don't affect our modal */
+    .cropper-container .cropper-wrap-box,
+    .cropper-container .cropper-canvas,
+    .cropper-container .cropper-drag-box,
+    .cropper-container .cropper-crop-box,
+    .cropper-container .cropper-modal {
+      position: absolute !important;
+      top: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      left: 0 !important;
+    }
+    
+    @media (max-width: 600px) {
+      .cropper-modal-wrapper {
+        width: 98vw;
+        max-height: 98vh;
+      }
+      
+      .cropper-crop-area {
+        padding: 0.5rem;
+      }
+      
+      .cropper-footer {
+        padding: 0.75rem 0.5rem;
+      }
+    }
+    
+    /* Create specific styles for when cropper is active */
+    .cropper-image-wrapper .cropper-container {
+      background: none !important;
+    }
+    
+    /* Override cropperjs styles to ensure they stay contained */
+    .cropper-image-wrapper .cropper-container,
+    .cropper-image-wrapper .cropper-canvas, 
+    .cropper-image-wrapper .cropper-wrap-box,
+    .cropper-image-wrapper .cropper-drag-box {
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+    }
+    
+    /* Update cropper visibility - important to set initially hidden */
+    .cropper-view-box,
+    .cropper-face {
+      opacity: 1;
+    }
+    
+    /* Dropdown menu styles */
+    .dropdown-menu {
+      min-width: 180px;
+      padding: 0.5rem 0;
+    }
+    
+    .dropdown-item {
+      display: block;
+      width: 100%;
+      padding: 0.5rem 1rem;
+      text-align: left;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 0.875rem;
+      transition: background-color 0.2s;
+    }
+    
+    .dropdown-item:hover {
+      background-color: #f3f4f6;
+    }
+    
+    /* Header actions container */
+    .left-section {
+      display: flex;
+      align-items: center;
+    }
+    
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .mobile-only {
+      display: none;
+    }
+    
+    @media (max-width: 767px) {
+      .header-actions {
+        display: flex;
+      }
+      .mobile-only {
+        display: inline-flex !important;
+      }
     }
   </style>
 </head>
 <body>
   <div class="app-container">
-    <header>
-      <div>
-        <h1>Anamorphic Portrait Generator</h1>
-        <div class="header-subtitle">Create line-based anamorphic portraits for laser cutting (all dimensions in mm)</div>
+    <header style="display: flex; justify-content: space-between; align-items: center; background-color: #2563eb; padding: 0.75rem 1rem;">
+      <div class="left-section">
+        <button id="menuButton" class="menu-button">
+          <i class="fas fa-bars"></i>
+        </button>
       </div>
-      <button id="menuButton" class="menu-button">
-        <i class="fas fa-bars"></i>
-      </button>
     </header>
     
+    
     <main>
-      <div class="sidebar">
+      <div class="parameters-panel">
+        
         <div id="initialControls">
           <div class="settings-section">
             <div class="settings-section-title">Image Input</div>
@@ -594,6 +735,7 @@
         </div>
         
         <div id="settingsControls" style="display: none;">
+          
           <div class="settings-section">
             <div class="settings-section-title">Line Settings</div>
             
@@ -727,7 +869,9 @@
         </div>
       </div>
       
-      <div class="content">
+      <div class="panel-separator"></div>
+      
+      <div class="viewer-panel">
         <div id="welcomeMessage" class="welcome-msg">
           <i class="fas fa-image welcome-icon"></i>
           <p>Upload an image to begin</p>
@@ -735,11 +879,6 @@
         </div>
         
         <div id="preview" style="display: none; flex-grow: 1; display: flex; flex-direction: column;">
-          <div class="preview-header">
-            <div class="preview-title" id="previewTitle">2D Preview</div>
-            <div class="preview-subtitle" id="previewSubtitle">Flat preview</div>
-          </div>
-          
           <div class="preview-container">
             <div class="view-toggle">
               <button id="viewToggleFront" class="view-toggle-button">Front</button>
@@ -761,6 +900,16 @@
     </main>
     
     <footer></footer>
+  </div>
+  
+  <!-- Export Dropdown Menu (hidden by default) -->
+  <div id="exportDropdown" class="dropdown-menu" style="display: none; position: fixed; right: 15px; top: 70px; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-radius: 4px; z-index: 1001; width: 180px;">
+    <button id="exportSVGButton" class="dropdown-item" style="display: block; width: 100%; padding: 10px; text-align: left; background: none; border: none; cursor: pointer;">
+      <i class="fas fa-file-export"></i> Export SVG
+    </button>
+    <button id="exportDXFButton" class="dropdown-item" style="display: block; width: 100%; padding: 10px; text-align: left; background: none; border: none; cursor: pointer;">
+      <i class="fas fa-file-export"></i> Export DXF
+    </button>
   </div>
   
   <!-- Hamburger Menu -->
@@ -815,23 +964,23 @@
   
   <!-- Cropper Modal -->
   <div id="cropperContainer" class="cropper-container" style="display: none;">
-    <div class="cropper-wrapper">
-      <div class="cropper-header">
-        <div class="cropper-title">Crop Image</div>
-        <button id="cropperClose" class="cropper-close">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-      
-      <div class="cropper-content">
-        <div class="cropper-img-container">
-          <img id="cropperImage" src="" style="max-width: 100%;">
+    <div class="cropper-modal-wrapper">
+      <div class="cropper-modal-content">
+        <div class="cropper-header">
+          <div class="cropper-title">Crop Image</div>
+          <button id="cropperClose" class="cropper-close">
+            <i class="fas fa-times"></i>
+          </button>
         </div>
-      </div>
-      
-      <div class="cropper-controls">
-        <button id="cropperCancel" class="button button-outline">Cancel</button>
-        <button id="cropperApply" class="button">Apply Crop</button>
+        <div class="cropper-crop-area">
+          <div class="cropper-image-wrapper">
+            <img id="cropperImage" src="" />
+          </div>
+        </div>
+        <div class="cropper-footer">
+          <button id="cropperCancel" class="button button-outline">Cancel</button>
+          <button id="cropperApply" class="button">Apply Crop</button>
+        </div>
       </div>
     </div>
   </div>
@@ -904,7 +1053,8 @@
       cropperImage: document.getElementById('cropperImage'),
       cropperClose: document.getElementById('cropperClose'),
       cropperCancel: document.getElementById('cropperCancel'),
-      cropperApply: document.getElementById('cropperApply')
+      cropperApply: document.getElementById('cropperApply'),
+      exportDropdown: document.getElementById('exportDropdown')
     };
     
     // Sliders
@@ -1003,6 +1153,7 @@
       elements.styleCircles.classList.add('active');
       elements.styleSmooth.classList.remove('active');
       state.settings.lineStyle = 'circles';
+      console.log('[DEBUG] Set lineStyle to circles');
       updatePreview();
     });
     
@@ -1010,6 +1161,7 @@
       elements.styleCircles.classList.remove('active');
       elements.styleSmooth.classList.add('active');
       state.settings.lineStyle = 'smooth';
+      console.log('[DEBUG] Set lineStyle to smooth');
       updatePreview();
     });
     
@@ -1054,6 +1206,36 @@
       elements.menuOverlay.classList.remove('open');
     }
     
+    function toggleExportDropdown() {
+      const dropdown = elements.exportDropdown;
+      
+      // Get position of the clicked button
+      const buttonRect = event.target.getBoundingClientRect();
+      
+      // Position the dropdown near the button that was clicked
+      dropdown.style.position = 'fixed';
+      dropdown.style.top = (buttonRect.bottom + 5) + 'px';
+      dropdown.style.right = (window.innerWidth - buttonRect.right) + 'px';
+      
+      // Toggle visibility
+      dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+      
+      // Close dropdown when clicking outside
+      function closeDropdown(e) {
+        if (!dropdown.contains(e.target) && e.target !== event.target) {
+          dropdown.style.display = 'none';
+          document.removeEventListener('click', closeDropdown);
+        }
+      }
+      
+      if (dropdown.style.display === 'block') {
+        // Add small delay to prevent immediate closure
+        setTimeout(() => {
+          document.addEventListener('click', closeDropdown);
+        }, 100);
+      }
+    }
+    
     // Preview mode functions
     function setPreviewMode(mode) {
       state.previewMode = mode;
@@ -1073,9 +1255,6 @@
       
       if (mode === '3d') {
         elements.viewToggle3D.classList.add('active');
-        elements.previewTitle.textContent = '3D Preview';
-        elements.previewSubtitle.textContent = 'Rotate, pan and zoom with mouse';
-        
         // Set to default 3D perspective view
         if (three.camera && three.controls) {
           const { ovalWidth, ovalHeight, height } = state.settings;
@@ -1085,16 +1264,10 @@
         }
       } else if (mode === 'iso') {
         elements.viewToggleIso.classList.add('active');
-        elements.previewTitle.textContent = 'Orthographic View';
-        elements.previewSubtitle.textContent = 'Top-down flattened view';
-        
         // Set to isometric view
         setIsometricView();
       } else if (mode === 'front') {
         elements.viewToggleFront.classList.add('active');
-        elements.previewTitle.textContent = 'Front View';
-        elements.previewSubtitle.textContent = 'View the structure from the front';
-        
         // Set to front view
         setFrontView();
       }
@@ -1139,6 +1312,7 @@
     }
     
     function processImage(img) {
+      //console.log('[DEBUG] processImage called', img);
       // Create canvas for image processing
       const canvas = document.createElement('canvas');
       const maxSize = 800; // Limit processing size for performance
@@ -1192,22 +1366,37 @@
     function openCropper() {
       if (!state.imageData) return;
       
-      elements.cropperImage.src = state.imageData.canvas.toDataURL();
+      // Show the modal first
       elements.cropperContainer.style.display = 'flex';
       
-      // Initialize cropper
+      // Set the source image
+      elements.cropperImage.src = state.imageData.canvas.toDataURL();
+      
+      // Destroy any existing cropper instance
       if (state.cropper) {
         state.cropper.destroy();
+        state.cropper = null;
       }
       
-      state.cropper = new Cropper(elements.cropperImage, {
-        aspectRatio: NaN,
-        viewMode: 1,
-        background: false,
-        responsive: true,
-        zoomable: true,
-        scalable: true
-      });
+      // Delay initialization slightly to ensure DOM is ready
+      setTimeout(() => {
+        // Initialize cropper with correct container reference
+        state.cropper = new Cropper(elements.cropperImage, {
+          aspectRatio: NaN,
+          viewMode: 1,
+          background: true, // Enable background
+          responsive: true,
+          zoomable: true,
+          scalable: true,
+          modal: true, // Ensure modal is enabled
+          guides: true,
+          center: true,
+          highlight: true,
+          autoCropArea: 0.8, // Start with larger crop area
+          minContainerWidth: 200,
+          minContainerHeight: 100
+        });
+      }, 100);
     }
     
     function closeCropper() {
@@ -1254,6 +1443,7 @@
     
     // Preview generation functions
     function updatePreview() {
+      console.log('[DEBUG] updatePreview called, three.scene:', !!three.scene, 'state.imageData:', !!state.imageData);
       if (!state.imageData) return;
       
       // Resize container to fill available space
@@ -1388,12 +1578,15 @@
       
       // Add vertical lines with thickness based on lineStyle and thicknessStyle
       if (lineStyle === 'circles') {
-        // Generate SVG with circles at each sample point
+        // Generate SVG with circles at each sample point and connecting lines
         lines.forEach(line => {
           const x = line.x + svgWidth / 2;
           
           // Sample points at regular intervals based on curve quality
           const sampleEvery = Math.max(1, Math.floor(line.samples.length / (curveQuality * 5)));
+          
+          // First collect all points to draw for this line
+          const points = [];
           
           line.samples.forEach((sample, idx) => {
             if (idx % sampleEvery === 0 || idx === 0 || idx === line.samples.length - 1) {
@@ -1409,90 +1602,55 @@
                 radius = radius * positionFactor;
               }
               
-              // Only add circles with meaningful thickness
+              // Only add points with meaningful thickness
               if (radius >= 0.5) {
-                svgContent += `<circle cx="${x}" cy="${y}" r="${radius}" fill="black"/>`;
+                points.push({ x, y, radius });
               }
             }
+          });
+          
+          // Add connecting line first (so it appears behind circles)
+          if (points.length > 1) {
+            let pathData = `M ${points[0].x} ${points[0].y}`;
+            for (let i = 1; i < points.length; i++) {
+              pathData += ` L ${points[i].x} ${points[i].y}`;
+            }
+            svgContent += `<path d="${pathData}" stroke="black" stroke-width="0.75" fill="none"/>`;
+          }
+          
+          // Then add the circles on top
+          points.forEach(point => {
+            svgContent += `<circle cx="${point.x}" cy="${point.y}" r="${point.radius}" fill="black"/>`;
           });
         });
       } else {
         // Generate SVG with continuous lines (smooth style)
-        if (laserSmoothing > 0) {
-          lines.forEach(line => {
-            const x = line.x + svgWidth / 2;
-            
-            // Sample points based on curve quality
-            const sampleEvery = Math.max(1, Math.floor(line.samples.length / (curveQuality * 10)));
-            
-            // For each line, we create a path
-            let pathPoints = [];
-            
-            // First collect all points
-            line.samples.forEach((sample, idx) => {
-              if (idx % sampleEvery === 0 || idx === 0 || idx === line.samples.length - 1) {
-                const y = sample.y + margin + ovalHeight / 2;
-                const thickness = sample.thickness;
-                
-                // Add the point and its thickness
-                pathPoints.push({ y, thickness });
-              }
-            });
-            
-            // Now create paths with varying thickness for each section
-            for (let i = 0; i < pathPoints.length - 1; i++) {
-              const startY = pathPoints[i].y;
-              const endY = pathPoints[i+1].y;
-              let startThickness = pathPoints[i].thickness;
-              let endThickness = pathPoints[i+1].thickness;
-              
+        lines.forEach(line => {
+          const x = line.x + svgWidth / 2;
+          // Sample points based on curve quality
+          const sampleEvery = Math.max(1, Math.floor(line.samples.length / (curveQuality * 10)));
+          let lastY = null;
+          let lastThickness = null;
+          line.samples.forEach((sample, idx) => {
+            if (idx % sampleEvery === 0 || idx === 0 || idx === line.samples.length - 1) {
+              const y = sample.y + margin + ovalHeight / 2;
+              let thickness = sample.thickness;
               // Apply tapered thickness style if selected
               if (thicknessStyle === 'tapered') {
-                // Calculate position factors for tapering (center = thickest, ends = thinner)
                 const centerY = margin + ovalHeight / 2 + height / 2;
-                const startFactor = 1 - (Math.abs(startY - centerY) / (height * 0.8));
-                const endFactor = 1 - (Math.abs(endY - centerY) / (height * 0.8));
-                
-                startThickness = startThickness * Math.max(0.3, startFactor);
-                endThickness = endThickness * Math.max(0.3, endFactor);
+                const positionFactor = 1 - (Math.abs(y - centerY) / (height * 0.8));
+                thickness = thickness * Math.max(0.3, positionFactor);
               }
-              
-              // Use average thickness for this segment
-              const avgThickness = (startThickness + endThickness) / 2;
-              
-              // Apply laser smoothing - reduce jaggedness by using rounded line caps
-              svgContent += `<line x1="${x}" y1="${startY}" x2="${x}" y2="${endY}" 
-                stroke="black" stroke-width="${avgThickness}" 
-                stroke-linecap="round"/>`;
+              if (lastY !== null) {
+                // Draw a line segment from lastY to y
+                const avgThickness = (lastThickness + thickness) / 2;
+                svgContent += `<line x1="${x}" y1="${lastY}" x2="${x}" y2="${y}" stroke="black" stroke-width="${avgThickness}" stroke-linecap="round"/>`;
+              }
+              lastY = y;
+              lastThickness = thickness;
             }
           });
-        } else {
-          // Standard non-smoothed version
-          lines.forEach(line => {
-            const x = line.x + svgWidth / 2;
-            
-            line.samples.forEach((sample, idx) => {
-              if (idx < line.samples.length - 1) {
-                const y1 = sample.y + margin + ovalHeight / 2;
-                const y2 = line.samples[idx + 1].y + margin + ovalHeight / 2;
-                let thickness = sample.thickness;
-                
-                // Apply tapered thickness style if selected
-                if (thicknessStyle === 'tapered') {
-                  // Calculate position factor for tapering (center = thickest, ends = thinner)
-                  const centerY = margin + ovalHeight / 2 + height / 2;
-                  const positionFactor = 1 - (Math.abs(y1 - centerY) / (height * 0.8));
-                  thickness = thickness * Math.max(0.3, positionFactor);
-                }
-                
-                // Draw line segment with proper thickness
-                svgContent += `<line x1="${x}" y1="${y1}" x2="${x}" y2="${y2}" 
-                  stroke="black" stroke-width="${thickness}" 
-                  stroke-linecap="round"/>`;
-              }
-            });
-          });
-        }
+        });
       }
       
       // Close SVG
@@ -1517,6 +1675,7 @@
     
     // 3D view functions
     function setup3DView() {
+      console.log('[DEBUG] setup3DView called');
       const container = elements.container3D;
       const width = container.clientWidth;
       const height = container.clientHeight || 400; // Default height if container has no height
@@ -1550,8 +1709,12 @@
       });
       three.renderer.setPixelRatio(window.devicePixelRatio > 1 ? 1.5 : 1); // Limit pixel ratio for performance
       three.renderer.setSize(width, height);
+      // Preserve .view-controls before clearing container
+      const viewControls = container.querySelector('.view-controls');
       container.innerHTML = ''; // Clear container
       container.appendChild(three.renderer.domElement);
+      // Re-append .view-controls if it exists
+      if (viewControls) container.appendChild(viewControls);
       
       // Initialize OrbitControls with optimized settings
       try {
@@ -1651,6 +1814,9 @@
       if (!lines) return;
       
       const { ovalWidth, ovalHeight, height, lineStyle, thicknessStyle } = state.settings;
+      
+      // Log for debugging mode
+      console.log('[DEBUG] update3DView mode:', { lineStyle, thicknessStyle });
       
       // Create top and bottom ovals (using fewer segments for better performance)
       const segments = Math.min(64, Math.max(24, Math.floor(ovalWidth / 10))); // Appropriate segments based on size
@@ -1753,11 +1919,45 @@
         const safeOffset = maxOffset * distanceFromEdgeX;
         const zOffset = (Math.random() * 2 - 1) * safeOffset;
         
-        // Only create the base rod if using uniform thickness and not tapered style
-        if (thicknessStyle === 'disks' && lineStyle === 'smooth') {
-          const rod = new THREE.Mesh(baseRodGeometry, rodMaterial);
-          rod.position.set(x, height/2, zOffset);
-          modelGroup.add(rod);
+        if (lineStyle === 'smooth') {
+          // Always create a rod for smooth mode
+          if (thicknessStyle === 'disks') {
+            const rod = new THREE.Mesh(baseRodGeometry, rodMaterial);
+            rod.position.set(x, height/2, zOffset);
+            modelGroup.add(rod);
+          } else if (thicknessStyle === 'tapered') {
+            const segments = Math.min(20, Math.max(10, line.samples.length / 8));
+            const segmentStep = line.samples.length / segments;
+            // Create points for the rod
+            const points = [];
+            const radiusSegments = 8; // Number of sides for the rod
+            // Add base points at top and bottom for tapered rod
+            points.push(new THREE.Vector3(0, 0, 0)); // Bottom point
+            // Sample points along the rod with their thicknesses
+            for (let i = 0; i <= segments; i++) {
+              const sampleIdx = Math.floor(i * segmentStep);
+              if (sampleIdx < line.samples.length) {
+                const sample = line.samples[sampleIdx];
+                const yPos = height - sample.y;
+                const radius = Math.max(0.5, sample.thickness * 0.6); // Adjust thickness
+                points.push(new THREE.Vector3(radius, yPos, 0));
+              }
+            }
+            points.push(new THREE.Vector3(0, height, 0)); // Top point
+            // Create the tapered rod geometry
+            const path = new THREE.CatmullRomCurve3(points);
+            const taperedGeometry = new THREE.TubeGeometry(
+              path,
+              segments,
+              0.5,  // Base radius
+              radiusSegments,
+              false  // Not closed
+            );
+            // Create and position the tapered rod
+            const taperedRod = new THREE.Mesh(taperedGeometry, rodMaterial.clone());
+            taperedRod.position.set(x, 0, zOffset);
+            modelGroup.add(taperedRod);
+          }
         }
         
         if (lineStyle === 'circles') {
@@ -1768,16 +1968,23 @@
           
           // Process samples for this line to create disks
           const samplesLength = line.samples.length;
+          
+          // Store positions for connecting line
+          const diskPositions = [];
+          
           for (let idx = 0; idx < samplesLength; idx += sampleInterval) {
             if (idx < samplesLength - 1) {
               const sample = line.samples[idx];
-              const y = sample.y / ovalHeight * height;
+              const y = height - sample.y;
               
               // Round thickness to nearest 0.5 to reuse geometries
               const thickness = Math.round(sample.thickness * 2) / 2;
               
               // Skip very small disks
               if (thickness < 1.5) continue;
+              
+              // Store position for line
+              diskPositions.push(new THREE.Vector3(x, y, zOffset));
               
               // Create or reuse disk geometry
               if (!diskTemplates[thickness]) {
@@ -1791,50 +1998,17 @@
               modelGroup.add(disk);
             }
           }
-        } else {
-          // SMOOTH STYLE: Create continuous tapered or uniform rod
-          if (thicknessStyle === 'tapered') {
-            const segments = Math.min(20, Math.max(10, line.samples.length / 8));
-            const segmentStep = line.samples.length / segments;
-            
-            // Create points for the rod
-            const points = [];
-            const radiusSegments = 8; // Number of sides for the rod
-            
-            // Add base points at top and bottom for tapered rod
-            points.push(new THREE.Vector3(0, 0, 0)); // Bottom point
-            
-            // Sample points along the rod with their thicknesses
-            for (let i = 0; i <= segments; i++) {
-              const sampleIdx = Math.floor(i * segmentStep);
-              if (sampleIdx < line.samples.length) {
-                const sample = line.samples[sampleIdx];
-                const yPos = sample.y / ovalHeight * height;
-                const radius = Math.max(0.5, sample.thickness * 0.6); // Adjust thickness
-                
-                points.push(new THREE.Vector3(radius, yPos, 0));
-              }
-            }
-            
-            points.push(new THREE.Vector3(0, height, 0)); // Top point
-            
-            // Create the tapered rod geometry
-            // We use a lathe geometry which rotates a 2D shape around an axis
-            const path = new THREE.CatmullRomCurve3(points);
-            const taperedGeometry = new THREE.TubeGeometry(
-              path,
-              segments,
-              0.5,  // Base radius
-              radiusSegments,
-              false  // Not closed
-            );
-            
-            // Create and position the tapered rod
-            const taperedRod = new THREE.Mesh(taperedGeometry, rodMaterial.clone());
-            taperedRod.position.set(x, 0, zOffset);
-            modelGroup.add(taperedRod);
+          
+          // Add connecting line between disks if we have more than 1 position
+          if (diskPositions.length > 1) {
+            const lineMaterial = new THREE.LineBasicMaterial({ 
+              color: 0x000000,
+              linewidth: 1 // Note: THREE.js line width is limited by WebGL
+            });
+            const lineGeometry = new THREE.BufferGeometry().setFromPoints(diskPositions);
+            const connectingLine = new THREE.Line(lineGeometry, lineMaterial);
+            modelGroup.add(connectingLine);
           }
-          // For disks style with smooth lines, we already added the base rod above
         }
       });
       
