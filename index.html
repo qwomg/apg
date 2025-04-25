@@ -509,8 +509,8 @@
       color: white;
     }
     
-    /* Cropper styles */
-    .cropper-container {
+    /* Cropper styles - renamed from cropper-container to avoid conflicts with cropperjs */
+    #cropperContainer {
       position: fixed;
       top: 0;
       left: 0;
@@ -603,19 +603,7 @@
       z-index: 9200;
     }
     
-    /* Override cropperjs styles with !important to ensure they don't affect our modal */
-    .cropper-container .cropper-wrap-box,
-    .cropper-container .cropper-canvas,
-    .cropper-container .cropper-drag-box,
-    .cropper-container .cropper-crop-box,
-    .cropper-container .cropper-modal {
-      position: absolute !important;
-      top: 0 !important;
-      right: 0 !important;
-      bottom: 0 !important;
-      left: 0 !important;
-    }
-    
+    /* Fix for cropperjs conflict - we need to target cropperjs's own cropper-container */
     @media (max-width: 600px) {
       .cropper-modal-wrapper {
         width: 98vw;
@@ -631,21 +619,28 @@
       }
     }
     
-    /* Create specific styles for when cropper is active */
-    .cropper-image-wrapper .cropper-container {
-      background: none !important;
+    /* Ensure cropperjs has room to work properly */
+    .cropper-crop-area {
+      overflow: visible !important;
     }
     
-    /* Override cropperjs styles to ensure they stay contained */
-    .cropper-image-wrapper .cropper-container,
-    .cropper-image-wrapper .cropper-canvas, 
-    .cropper-image-wrapper .cropper-wrap-box,
-    .cropper-image-wrapper .cropper-drag-box {
-      position: absolute !important;
-      top: 0 !important;
-      left: 0 !important;
-      width: 100% !important;
-      height: 100% !important;
+    /* Make sure the cropperjs container stays within our wrapper */
+    .cropper-image-wrapper {
+      height: 400px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    /* Fix z-index for cropperjs elements */
+    .cropper-view-box,
+    .cropper-face {
+      z-index: 9300 !important;
+    }
+    
+    /* Fix the white box issue - make the modal semi-transparent instead of opaque white */
+    .cropper-modal {
+      background-color: rgba(0, 0, 0, 0.5) !important;
+      opacity: 1 !important;
     }
     
     /* Update cropper visibility - important to set initially hidden */
@@ -864,6 +859,17 @@
                 Disks show constant thickness, Tapered provides smooth thickness transition
               </div>
             </div>
+            
+            <div id="connectorThicknessRow" class="settings-row">
+              <label class="settings-label">Connector Thickness (mm)</label>
+              <div class="slider-container">
+                <input type="range" id="connectorThickness" class="slider" min="0.5" max="5" step="0.5" value="2">
+                <span id="connectorThicknessValue" class="slider-value">2</span>
+              </div>
+              <div style="font-size: 0.75rem; color: #6b7280; margin-top: 4px;">
+                Thickness of the lines connecting circles (for laser cutting)
+              </div>
+            </div>
           </div>
           
         </div>
@@ -974,7 +980,7 @@
         </div>
         <div class="cropper-crop-area">
           <div class="cropper-image-wrapper">
-            <img id="cropperImage" src="" />
+            <img id="cropperImage" src="" alt="Image to crop" />
           </div>
         </div>
         <div class="cropper-footer">
@@ -1003,6 +1009,7 @@
         curveQuality: 5,
         height: 200,
         margin: 20,
+        connectorThickness: 2, // thickness of connecting rods (mm)
         lineStyle: 'circles', // circles or smooth
         thicknessStyle: 'disks' // disks or tapered
       },
@@ -1098,6 +1105,10 @@
       margin: {
         input: document.getElementById('margin'),
         value: document.getElementById('marginValue')
+      },
+      connectorThickness: {
+        input: document.getElementById('connectorThickness'),
+        value: document.getElementById('connectorThicknessValue')
       }
     };
     
@@ -1127,6 +1138,11 @@
       });
     });
     
+    // Set initial visibility of connector thickness setting
+    // Show it by default since circles is the default line style
+    document.getElementById('connectorThicknessRow').style.display = 
+      state.settings.lineStyle === 'circles' ? 'block' : 'none';
+    
     // Handle window resize
     window.addEventListener('resize', resizePreviewContainers);
     
@@ -1153,6 +1169,10 @@
       elements.styleCircles.classList.add('active');
       elements.styleSmooth.classList.remove('active');
       state.settings.lineStyle = 'circles';
+      
+      // Show connector thickness setting when using circles
+      document.getElementById('connectorThicknessRow').style.display = 'block';
+      
       console.log('[DEBUG] Set lineStyle to circles');
       updatePreview();
     });
@@ -1161,6 +1181,10 @@
       elements.styleCircles.classList.remove('active');
       elements.styleSmooth.classList.add('active');
       state.settings.lineStyle = 'smooth';
+      
+      // Hide connector thickness setting when using smooth lines
+      document.getElementById('connectorThicknessRow').style.display = 'none';
+      
       console.log('[DEBUG] Set lineStyle to smooth');
       updatePreview();
     });
@@ -1366,10 +1390,7 @@
     function openCropper() {
       if (!state.imageData) return;
       
-      // Show the modal first
-      elements.cropperContainer.style.display = 'flex';
-      
-      // Set the source image
+      // Prepare the image before showing the modal
       elements.cropperImage.src = state.imageData.canvas.toDataURL();
       
       // Destroy any existing cropper instance
@@ -1378,25 +1399,39 @@
         state.cropper = null;
       }
       
-      // Delay initialization slightly to ensure DOM is ready
+      // Reset any previously applied styles
+      elements.cropperImage.style.width = '';
+      elements.cropperImage.style.height = '';
+      elements.cropperImage.style.maxWidth = '100%';
+      elements.cropperImage.style.maxHeight = '400px';
+      
+      // Now show the modal
+      elements.cropperContainer.style.display = 'flex';
+      
+      // Give the DOM time to render the container and image
       setTimeout(() => {
         // Initialize cropper with correct container reference
         state.cropper = new Cropper(elements.cropperImage, {
-          aspectRatio: NaN,
-          viewMode: 1,
-          background: true, // Enable background
+          aspectRatio: NaN, // Free aspect ratio
+          viewMode: 1, // Restrict the crop box to not exceed the size of the canvas
+          background: true, // Show the grid background
           responsive: true,
+          restore: false, // Don't restore the cropped area after resize
           zoomable: true,
-          scalable: true,
-          modal: true, // Ensure modal is enabled
+          wheelZoomRatio: 0.1, // Slower zoom for more precision
+          cropBoxMovable: true,
+          cropBoxResizable: true,
+          toggleDragModeOnDblclick: true, // Allow switching between move and crop
           guides: true,
           center: true,
           highlight: true,
-          autoCropArea: 0.8, // Start with larger crop area
+          autoCropArea: 0.9, // Start with larger crop area
           minContainerWidth: 200,
-          minContainerHeight: 100
+          minContainerHeight: 100,
+          modal: true, // Enable modal but we'll style it to be semi-transparent
+          dragMode: 'crop' // Start in crop mode
         });
-      }, 100);
+      }, 300); // Increased delay for better rendering
     }
     
     function closeCropper() {
@@ -1615,7 +1650,8 @@
             for (let i = 1; i < points.length; i++) {
               pathData += ` L ${points[i].x} ${points[i].y}`;
             }
-            svgContent += `<path d="${pathData}" stroke="black" stroke-width="0.75" fill="none"/>`;
+            // Use the connector thickness setting
+            svgContent += `<path d="${pathData}" stroke="black" stroke-width="${state.settings.connectorThickness}" fill="none"/>`;
           }
           
           // Then add the circles on top
@@ -2001,13 +2037,23 @@
           
           // Add connecting line between disks if we have more than 1 position
           if (diskPositions.length > 1) {
-            const lineMaterial = new THREE.LineBasicMaterial({ 
-              color: 0x000000,
-              linewidth: 1 // Note: THREE.js line width is limited by WebGL
-            });
-            const lineGeometry = new THREE.BufferGeometry().setFromPoints(diskPositions);
-            const connectingLine = new THREE.Line(lineGeometry, lineMaterial);
-            modelGroup.add(connectingLine);
+            // For WebGL visualization, we need to use a tube geometry for thicker lines
+            // Create a curve from the points
+            const curve = new THREE.CatmullRomCurve3(diskPositions);
+            
+            // Create a tube geometry from the curve (using connector thickness setting)
+            const tubeGeometry = new THREE.TubeGeometry(
+              curve,
+              diskPositions.length * 2, // segments
+              state.settings.connectorThickness / 2, // radius is half the thickness
+              8, // tubular segments
+              false // closed
+            );
+            
+            // Create the tube mesh
+            const tubeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            const connectingTube = new THREE.Mesh(tubeGeometry, tubeMaterial);
+            modelGroup.add(connectingTube);
           }
         }
       });
